@@ -1,22 +1,29 @@
 from django.shortcuts import render
-
-# Create your views here.
 import requests
 from bs4 import BeautifulSoup
+from django.http import HttpResponseRedirect
 from .models import Link
+# Create your views here.
 
 
 def scrape(request):
-    page = requests.get('https://www.google.com')
-    soup = BeautifulSoup(page.text, "html.parser")
+    if request.method == "POST":
+        site = request.POST.get('site', '')
 
-    link_address = []
+        page = requests.get(site)
+        soup = BeautifulSoup(page.text, 'html.parser')
 
-    for link in soup.find_all('a'):
-        link_address = link.get('href')
-        link_text = link.string
-        Link.objects.create(address=link_address, name=link_text)
-
+        for link in soup.find_all('a'):
+            link_address = link.get('href')
+            link_text = link.string
+            Link.objects.create(address=link_address, name=link_text)
+        return HttpResponseRedirect('http://127.0.0.1:8000/')
+    else:
         data = Link.objects.all()
 
     return render(request, 'myapp/result.html', {'data': data})
+
+
+def clear(request):
+    Link.objects.all().delete()
+    return render(request, 'myapp/result.html')
